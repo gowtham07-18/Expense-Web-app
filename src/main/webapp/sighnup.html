@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="images/logo.png" sizes="64x64" type="image/png">   
+    <title>Signup Form</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="signupStyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById("password");
+            const toggleIcon = document.getElementById("togglePassword");
+
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleIcon.classList.remove("bxs-show");
+                toggleIcon.classList.add("bxs-hide");
+            } else {
+                passwordField.type = "password";
+                toggleIcon.classList.remove("bxs-hide");
+                toggleIcon.classList.add("bxs-show");
+            }
+        }
+
+        function validatePasswordMatch() {
+            const password = document.getElementById("password");
+            const retypePassword = document.getElementById("retypePassword");
+            const passwordError = document.getElementById("password-error");
+
+            if (password.value !== retypePassword.value) {
+                passwordError.style.display = "block";
+                retypePassword.classList.add("invalid");
+                return false;
+            } else {
+                passwordError.style.display = "none";
+                retypePassword.classList.remove("invalid");
+                return true;
+            }
+        }
+
+        function checkPasswordStrength() {
+            const password = document.getElementById("password");
+            const strengthIndicator = document.getElementById("strength-indicator");
+            const passwordValue = password.value;
+
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const mediumPasswordRegex = /^(?=.*[a-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/;
+
+            if (strongPasswordRegex.test(passwordValue)) {
+                strengthIndicator.textContent = "Strong";
+                strengthIndicator.style.color = "green";
+            } else if (mediumPasswordRegex.test(passwordValue)) {
+                strengthIndicator.textContent = "Medium";
+                strengthIndicator.style.color = "orange";
+            } else {
+                strengthIndicator.textContent = "Weak";
+                strengthIndicator.style.color = "red";
+            }
+        }
+
+        function handleSignupSubmit(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById("username").value;
+            const fullName = document.getElementById("fullName").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const retypePassword = document.getElementById("retypePassword").value;
+            const phone = iti.getNumber(); // Get the full phone number with country code
+            const answer = document.getElementById("answer").value;
+
+            const signupData = {
+                username: username,
+                fullName: fullName,
+                email: email,
+                password: password,
+                phone: phone,
+                answer: answer
+            };
+            
+            if (password !== retypePassword) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Passwords do not match.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            if (!email || !username || !phone || !answer) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Please fill in all the required fields.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            fetch('RegisterServlet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(signupData)
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Signup Successful!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "home.html"
+                    });	
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: data.message,
+                        icon:'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }).catch(() => {
+                Swal.fire({
+                    title: 'Server Error!',
+                    text: 'Please try again later.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        }
+	
+        let iti;
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            const input = document.querySelector("#phone");
+            iti = window.intlTelInput(input, {
+                initialCountry: "auto", 
+                geoIpLookup: function(callback) {
+                    fetch("https://ipinfo.io", { method: "GET", headers: { "Accept": "application/json" } })
+                        .then(response => response.json())
+                        .then(data => callback(data.country))
+                        .catch(() => callback("us"));
+                },
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js", // Optional: for formatting and validation
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="image_left">
+            <div class="vertical-line"></div>
+            <img src="images/signupimagae.png" alt="image" class="login_image"> 
+        </div>
+        <div class="form-box_login">
+            <form onsubmit="handleSignupSubmit(event)">
+                <h1>Welcome!</h1>
+                <div class="input-box">
+                    <i class="bx bxs-user"></i>
+                    <input type="text" id="username" placeholder="Username" required pattern = "^(?=.*[a-z])(?=.*[0-9])[a-z0-9]{4,}$" title = "Username should only contain lowercase letters and numbers.">
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-user-circle"></i>
+                    <input type="text" id="fullName" placeholder="Full Name" required pattern="^[A-Za-z\s]+$" 
+        title="Full Name should only contain letters and spaces.">>
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-lock-alt"></i>
+                    <input type="password" id="password" placeholder="Password" required 
+                           pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                           title="Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character" oninput="checkPasswordStrength()">
+                    <i class="bx bxs-show" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+                    <div id="strength-indicator"></div>
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-lock-alt"></i>
+                    <input type="text" id="retypePassword" placeholder="Retype Password" required oninput="validatePasswordMatch()">
+                    <div id="password-error" style="color: red; display: none;">Passwords do not match</div>
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-envelope"></i>
+                    <input type="email" id="email" placeholder="Email" required>
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-phone"></i>
+                    <input type="tel" id="phone" placeholder="Phone No." required>
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-help-circle"></i>
+                    <select required>
+                        <option value="school">What is your favourite food?</option>
+                    </select>
+                </div>
+                <div class="input-box">
+                    <i class="bx bxs-comment"></i>
+                    <input type="text" id="answer" placeholder="Answer" required>
+                </div>
+                <button type="submit" class="btn">Signup</button>
+                <div class="forgot-link">
+                    <p>Already have an account? <a href="login.html">Sign In</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
